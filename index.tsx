@@ -351,10 +351,6 @@ function App() {
 }
 
 function Day({ isSelected, date, todos, addTodo, weekdayName, minBoxes }: { isSelected: ({ date, row }: { date: string, row: number }) => boolean, date: string, todos: Todo[], addTodo: (todo: Omit<Todo, 'id'>) => void, weekdayName: string, minBoxes?: number }) {
-	// Use passed minBoxes or fall back to weekend/weekday logic
-	const finalMinBoxes = minBoxes ?? (weekdayName === 'Saturday' || weekdayName === 'Sunday' ? 2 : 8)
-	const emptyBoxesNeeded = Math.max(0, finalMinBoxes - todos.length)
-	
 	// Get the correct date for this specific day
 	const getDateForDay = () => {
 		if (date === dates.someday) return ''
@@ -363,29 +359,26 @@ function Day({ isSelected, date, todos, addTodo, weekdayName, minBoxes }: { isSe
 	}
 	
 	return (
-		<group style={{ flexDirection: 'column' }}>
-			<box border={['bottom']} borderColor="#FFFFFF">
-				<text fg="#FFFFFF">{weekdayName} {getDateForDay()}</text>
-			</box>
-			<box backgroundColor={isSelected({ date, row: 0 }) ? "#FFFFFF" : "#424242"}>
-				<TodoInput addTodo={addTodo} focused={isSelected({ date, row: 0 })} date={date} />
-			</box>
-			{/* for some reason, the first box overlaps the input box */}
-			{/* so we add an empty box to push the other boxes down */}
-			<box><text /></box>
-			{todos.map((todo, index) => (
-				<box key={index} backgroundColor={isSelected({ date, row: index + 1 }) ? "#FFFFFF" : "#424242"}>
-					<text fg={isSelected({ date, row: index + 1 }) ? "#424242" : "#FFFFFF"}>
-						{todo.completedAt ? strikethrough(todo.text) : todo.text}
-					</text>
+		<box border borderColor="#FFFFFF" borderStyle="rounded">
+			<group style={{ flexDirection: 'column', height: 11 }}>
+				<box border={['bottom']} borderColor="#FFFFFF">
+					<text fg="#FFFFFF">{weekdayName} {getDateForDay()}</text>
 				</box>
-			))}
-			{Array.from({ length: emptyBoxesNeeded }, (_, index) => (
-				<box key={`empty-${index}`} backgroundColor="#1a1a1a">
-					<text fg="#666666"> </text>
+				<box backgroundColor={isSelected({ date, row: 0 }) ? "#FFFFFF" : "#424242"}>
+					<TodoInput addTodo={addTodo} focused={isSelected({ date, row: 0 })} date={date} />
 				</box>
-			))}
-		</group>
+				{/* for some reason, the first box overlaps the input box */}
+				{/* so we add an empty box to push the other boxes down */}
+				<box><text /></box>
+				{todos.map((todo, index) => (
+					<box key={index} backgroundColor={isSelected({ date, row: index + 1 }) ? "#FFFFFF" : "#000000"}>
+						<text fg={isSelected({ date, row: index + 1 }) ? "#000000" : "#FFFFFF"}>
+							{todo.completedAt ? strikethrough(todo.text) : todo.text}
+						</text>
+					</box>
+				))}
+			</group>
+		</box>
 	)
 }
 
@@ -403,7 +396,7 @@ function TodoInput({ addTodo, focused, date }: { addTodo: (todo: Omit<Todo, 'id'
 	)
 }
 
-function getCurrentWeek() {
+function getCurrentWeek(weekOffset = 0) {
 	const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 	const today = new Date()
 	const currentWeekday = days[today.getDay()]
