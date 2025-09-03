@@ -292,8 +292,12 @@ function App() {
 }
 
 function Day({ isSelected, date, todos, addTodo, weekdayName }: { isSelected: ({ date, row }: { date: string, row: number }) => boolean, date: string, todos: Todo[], addTodo: (todo: Todo) => void, weekdayName: string }) {
+	// Saturday and Sunday get 2 boxes, other days get full height (8 boxes)
+	const isWeekend = weekdayName === 'Saturday' || weekdayName === 'Sunday'
+	const minBoxes = isWeekend ? 2 : 8
+	const emptyBoxesNeeded = Math.max(0, minBoxes - todos.length)
+	
 	return (
-
 		<group style={{ flexDirection: 'column' }}>
 			<box border={['bottom']} borderColor="#FFFFFF">
 				<text fg="#FFFFFF">{weekdayName} {addDays(weekStart, 1).toLocaleDateString()}</text>
@@ -309,6 +313,11 @@ function Day({ isSelected, date, todos, addTodo, weekdayName }: { isSelected: ({
 					<text fg={isSelected({ date, row: index + 1 }) ? "#424242" : "#FFFFFF"}>
 						{todo.completedAt ? strikethrough(todo.text) : todo.text}
 					</text>
+				</box>
+			))}
+			{Array.from({ length: emptyBoxesNeeded }, (_, index) => (
+				<box key={`empty-${index}`} backgroundColor="#1a1a1a">
+					<text fg="#666666"> </text>
 				</box>
 			))}
 		</group>
