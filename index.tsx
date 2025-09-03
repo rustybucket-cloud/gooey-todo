@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useReducer } from 'react'
 import { render, useKeyboard, useRenderer } from '@opentui/react'
 import { strikethrough } from '@opentui/core'
 
@@ -51,25 +51,56 @@ type TodosByDay = {
 	friday: Todo[]
 	saturday: Todo[]
 	sunday: Todo[]
+	[key: string]: Todo[]
 }
 
 type Focus = {
-	date: Weekday
+	date: number
 	row: number
 }
 
 type ACTIONS = 'MOVE_DOWN' | 'MOVE_UP' | 'MOVE_RIGHT' | 'MOVE_LEFT'
 
-const INITIAL_STATE = { date: dateIndicies[dates.monday], row: 0, todos: {} }
-
-function reducer(state: Focus & { todos: TodosByDay }, action: { type: ACTIONS }) {
+function reducer(state: Focus, action: { type: ACTIONS; todos?: TodosByDay }) {
+	const todosByDay: TodosByDay = action.todos || {
+		monday: [],
+		tuesday: [],
+		wednesday: [],
+		thursday: [],
+		friday: [],
+		saturday: [],
+		sunday: [],
+	}
+	const currentDateString = datesByIndex[state.date as keyof typeof datesByIndex]
+	const currentTodos = todosByDay[currentDateString] || []
+	
 	switch (action.type) {
 		case 'MOVE_DOWN':
-			if (state.row === state.todos[state.date].length - 1) return state
+			if (state.row >= currentTodos.length) return state
 			return { ...state, row: state.row + 1 }
 		case 'MOVE_UP':
 			if (state.row === 0) return state
 			return { ...state, row: state.row - 1 }
+		case 'MOVE_RIGHT':
+			if (state.date === 6) return state // Saturday is index 6
+			const nextDateString = datesByIndex[(state.date + 1) as keyof typeof datesByIndex]
+			const nextTodos = todosByDay[nextDateString] || []
+			const maxRow = Math.max(0, nextTodos.length)
+			return { 
+				...state, 
+				date: state.date + 1,
+				row: Math.min(state.row, maxRow)
+			}
+		case 'MOVE_LEFT':
+			if (state.date === 0) return state // Sunday is index 0
+			const prevDateString = datesByIndex[(state.date - 1) as keyof typeof datesByIndex]
+			const prevTodos = todosByDay[prevDateString] || []
+			const maxPrevRow = Math.max(0, prevTodos.length)
+			return { 
+				...state, 
+				date: state.date - 1,
+				row: Math.min(state.row, maxPrevRow)
+			}
 		default:
 			return state
 	}
@@ -78,13 +109,13 @@ function reducer(state: Focus & { todos: TodosByDay }, action: { type: ACTIONS }
 function App() {
 	const [todos, setTodos] = useState<Todo[]>([])
 
-	const [focused, setFocused] = useState({ date: dateIndicies[dates.monday], row: 0 })
+	const [focused, dispatch] = useReducer(reducer, { date: dateIndicies[dates.monday] || 1, row: 0 })
 
 	const isInputFocused = focused.row === 0
 
 	const renderer = useRenderer()
 
-	const todosByDay = {
+	const todosByDay: TodosByDay = {
 		[dates.sunday]: todos.filter((todo) => todo.assignedDate === dates.sunday),
 		[dates.monday]: todos.filter((todo) => todo.assignedDate === dates.monday),
 		[dates.tuesday]: todos.filter((todo) => todo.assignedDate === dates.tuesday),
@@ -92,42 +123,32 @@ function App() {
 		[dates.thursday]: todos.filter((todo) => todo.assignedDate === dates.thursday),
 		[dates.friday]: todos.filter((todo) => todo.assignedDate === dates.friday),
 		[dates.saturday]: todos.filter((todo) => todo.assignedDate === dates.saturday),
+		monday: todos.filter((todo) => todo.assignedDate === dates.monday),
+		tuesday: todos.filter((todo) => todo.assignedDate === dates.tuesday),
+		wednesday: todos.filter((todo) => todo.assignedDate === dates.wednesday),
+		thursday: todos.filter((todo) => todo.assignedDate === dates.thursday),
+		friday: todos.filter((todo) => todo.assignedDate === dates.friday),
+		saturday: todos.filter((todo) => todo.assignedDate === dates.saturday),
+		sunday: todos.filter((todo) => todo.assignedDate === dates.sunday),
 	}
 
 	useKeyboard((key) => {
 		if (['down', 'j'].includes(key.name)) {
 			if (key.name === 'j' && isInputFocused) return
-			setFocused((prev) => {
-				return { ...prev, row: prev.row + 1 }
-			})
+			dispatch({ type: 'MOVE_DOWN', todos: todosByDay })
 		} else if (['up', 'k'].includes(key.name)) {
 			if (key.name === 'k' && isInputFocused) return
-			setFocused((prev) => {
-				if (prev.row === 0) return { ...prev, row: 0 }
-				return { ...prev, row: prev.row - 1 }
-			})
+			dispatch({ type: 'MOVE_UP', todos: todosByDay })
 		}
 
 		if (['right', 'l'].includes(key.name)) {
 			if (key.name === 'l' && isInputFocused) return
-			setFocused((prev) => {
-				if (prev.date === dateIndicies[dates.saturday]) return prev
-				const currentTodos = todosByDay[dateIndicies?.[prev.date ?? 0] ?? 0] ?? []
-				const nextTodos = todosByDay[dateIndicies?.[prev.date ?? 0 + 1] ?? 0] ?? []
-				if (nextTodos.length < currentTodos.length) return { row: nextTodos.length - 1, date: prev.date ?? 0 + 1 }
-				return { ...prev, date: prev.date || 0 + 1 }
-			})
+			dispatch({ type: 'MOVE_RIGHT', todos: todosByDay })
 		}
 
 		if (['left', 'h'].includes(key.name)) {
 			if (key.name === 'h' && isInputFocused) return
-			setFocused((prev) => {
-				if (prev.date === dateIndicies[dates.monday]) return prev
-				const currentTodos = todosByDay[dateIndicies?.[prev.date ?? 0] ?? 0] ?? []
-				const nextTodos = todosByDay[dateIndicies?.[prev.date ?? 0 - 1] ?? 0] ?? []
-				if (nextTodos.length < currentTodos.length) return { row: nextTodos.length - 1, date: prev.date ?? 0 - 1 }
-				return { ...prev, date: prev.date || 0 - 1 }
-			})
+			dispatch({ type: 'MOVE_LEFT', todos: todosByDay })
 		}
 
 		if (isInputFocused) return
@@ -138,7 +159,7 @@ function App() {
 
 		if (key.name === 'c') {
 			setTodos((prev) => {
-				return prev.map((todo, index) => {
+				return prev.map((todo) => {
 					if (!todo.assignedDate) return todo
 					const isFocusedDate = dateIndicies[todo.assignedDate] === focused.date
 					const row = (todosByDay[todo.assignedDate]?.findIndex((item) => item.text === todo.text) ?? 0) + 1
@@ -183,7 +204,7 @@ function Day({ isSelected, date, todos, addTodo, weekdayName }: { isSelected: ({
 				<text fg="#FFFFFF">{weekdayName} {addDays(weekStart, 1).toLocaleDateString()}</text>
 			</box>
 			<box backgroundColor={isSelected({ date, row: 0 }) ? "#FFFFFF" : "#424242"}>
-				<TodoInput addTodo={addTodo} focused={isSelected({ date, row: 0 })} date={dates.monday} />
+				<TodoInput addTodo={addTodo} focused={isSelected({ date, row: 0 })} date={date} />
 			</box>
 			{/* for some reason, the first box overlaps the input box */}
 			{/* so we add an empty box to push the other boxes down */}
