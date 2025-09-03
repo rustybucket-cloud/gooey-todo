@@ -345,7 +345,7 @@ function App() {
 				</group>
 			</group>
 			<Day isSelected={isSelected} date={dates.someday} todos={todosByDay[dates.someday] ?? []} addTodo={addTodo} weekdayName="Someday" minBoxes={somedayBoxCount} />
-			<text fg="#888888">←→hjkl: navigate | c: complete | d: delete | t: debug</text>
+			<text fg="#888888">←→hjkl: navigate | shift+↓: someday | shift+↑: from someday | c: complete | d: delete | t: debug</text>
 		</group>
 	)
 }
