@@ -213,8 +213,9 @@ function App() {
 
 	// Calculate available height for day columns
 	const headerHeight = 3 // "Hello, Todos!" + spacing
+	const controlsHeight = 1 // Controls row at bottom
 	const bottomPadding = 2 // Match the top padding
-	const totalAvailableHeight = height - headerHeight - bottomPadding
+	const totalAvailableHeight = height - headerHeight - controlsHeight - bottomPadding
 	
 	// Allocate height: weekdays get 2/3, someday gets 1/3
 	const weekdayRowHeight = Math.floor(totalAvailableHeight * (2/3))
@@ -291,7 +292,7 @@ function App() {
 	return (
 		<group padding={1}>
 			<text fg="#00FF00">Todoui!</text>
-			<group style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+			<group style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
 				<Day isSelected={isSelected} date={dates.monday} todos={todosByDay[dates.monday] ?? []} addTodo={addTodo} weekdayName="Monday" minBoxes={weekdayBoxCount} />
 				<Day isSelected={isSelected} date={dates.tuesday} todos={todosByDay[dates.tuesday] ?? []} addTodo={addTodo} weekdayName="Tuesday" minBoxes={weekdayBoxCount} />
 				<Day isSelected={isSelected} date={dates.wednesday} todos={todosByDay[dates.wednesday] ?? []} addTodo={addTodo} weekdayName="Wednesday" minBoxes={weekdayBoxCount} />
@@ -303,6 +304,7 @@ function App() {
 				</group>
 			</group>
 			<Day isSelected={isSelected} date={dates.someday} todos={todosByDay[dates.someday] ?? []} addTodo={addTodo} weekdayName="Someday" minBoxes={somedayBoxCount} />
+			<text fg="#888888">←→hjkl: navigate | c: complete | d: delete | t: debug</text>
 		</group>
 	)
 }
