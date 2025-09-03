@@ -17,6 +17,20 @@ const dates = {
 	someday: 'someday',
 }
 
+function getCurrentDayIndex(): number {
+	const today = new Date().toISOString().substring(0, 10)
+	
+	// Check if today matches any of the week dates
+	for (const [, dateValue] of Object.entries(dates)) {
+		if (dateValue === today) {
+			return dateIndicies[dateValue as keyof typeof dateIndicies] || 1
+		}
+	}
+	
+	// Default to Monday if today is not in the current week
+	return dateIndicies[dates.monday] || 1
+}
+
 type Weekday = (typeof dates)[keyof typeof dates]
 
 const dateIndicies = {
@@ -187,7 +201,7 @@ function reducer(state: Focus, action: { type: ACTIONS; todos?: TodosByDay }) {
 function App() {
 	const [todos, setTodos] = useState<Todo[]>([])
 
-	const [focused, dispatch] = useReducer(reducer, { date: dateIndicies[dates.monday] || 1, row: 0 })
+	const [focused, dispatch] = useReducer(reducer, { date: getCurrentDayIndex(), row: 0 })
 
 	const { width, height } = useTerminalDimensions()
 
