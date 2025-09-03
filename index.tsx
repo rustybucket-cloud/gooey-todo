@@ -1,5 +1,5 @@
 import { useState, useReducer } from 'react'
-import { render, useKeyboard, useRenderer } from '@opentui/react'
+import { render, useKeyboard, useRenderer, useTerminalDimensions } from '@opentui/react'
 import { strikethrough } from '@opentui/core'
 
 type Todo = {
@@ -194,6 +194,8 @@ function App() {
 
 	const [focused, dispatch] = useReducer(reducer, { date: dateIndicies[dates.monday] || 1, row: 0 })
 
+	const { width, height } = useTerminalDimensions()
+
 	const isInputFocused = focused.row === 0
 
 	const renderer = useRenderer()
@@ -208,6 +210,19 @@ function App() {
 		[dates.saturday]: todos.filter((todo) => todo.assignedDate === dates.saturday),
 		[dates.someday]: todos.filter((todo) => todo.assignedDate === dates.someday),
 	}
+
+	// Calculate available height for day columns
+	const headerHeight = 3 // "Hello, Todos!" + spacing
+	const totalAvailableHeight = height - headerHeight
+	
+	// Allocate height: weekdays get 2/3, someday gets 1/3
+	const weekdayRowHeight = Math.floor(totalAvailableHeight * (2/3))
+	const somedayRowHeight = totalAvailableHeight - weekdayRowHeight
+	
+	// Each day needs header + input + spacing box, so subtract 3
+	const weekdayBoxCount = Math.max(3, weekdayRowHeight - 3)
+	const weekendBoxCount = Math.max(2, Math.floor(weekdayBoxCount / 2))
+	const somedayBoxCount = Math.max(2, somedayRowHeight - 3)
 
 	useKeyboard((key) => {
 		if (['down', 'j'].includes(key.name)) {
@@ -276,26 +291,25 @@ function App() {
 		<group padding={2}>
 			<text fg="#00FF00">Hello, Todos!</text>
 			<group style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-				<Day isSelected={isSelected} date={dates.monday} todos={todosByDay[dates.monday] ?? []} addTodo={addTodo} weekdayName="Monday" />
-				<Day isSelected={isSelected} date={dates.tuesday} todos={todosByDay[dates.tuesday] ?? []} addTodo={addTodo} weekdayName="Tuesday" />
-				<Day isSelected={isSelected} date={dates.wednesday} todos={todosByDay[dates.wednesday] ?? []} addTodo={addTodo} weekdayName="Wednesday" />
-				<Day isSelected={isSelected} date={dates.thursday} todos={todosByDay[dates.thursday] ?? []} addTodo={addTodo} weekdayName="Thursday" />
-				<Day isSelected={isSelected} date={dates.friday} todos={todosByDay[dates.friday] ?? []} addTodo={addTodo} weekdayName="Friday" />
+				<Day isSelected={isSelected} date={dates.monday} todos={todosByDay[dates.monday] ?? []} addTodo={addTodo} weekdayName="Monday" minBoxes={weekdayBoxCount} />
+				<Day isSelected={isSelected} date={dates.tuesday} todos={todosByDay[dates.tuesday] ?? []} addTodo={addTodo} weekdayName="Tuesday" minBoxes={weekdayBoxCount} />
+				<Day isSelected={isSelected} date={dates.wednesday} todos={todosByDay[dates.wednesday] ?? []} addTodo={addTodo} weekdayName="Wednesday" minBoxes={weekdayBoxCount} />
+				<Day isSelected={isSelected} date={dates.thursday} todos={todosByDay[dates.thursday] ?? []} addTodo={addTodo} weekdayName="Thursday" minBoxes={weekdayBoxCount} />
+				<Day isSelected={isSelected} date={dates.friday} todos={todosByDay[dates.friday] ?? []} addTodo={addTodo} weekdayName="Friday" minBoxes={weekdayBoxCount} />
 				<group style={{ flexDirection: 'column' }}>
-					<Day isSelected={isSelected} date={dates.saturday} todos={todosByDay[dates.saturday] ?? []} addTodo={addTodo} weekdayName="Saturday" />
-					<Day isSelected={isSelected} date={dates.sunday} todos={todosByDay[dates.sunday] ?? []} addTodo={addTodo} weekdayName="Sunday" />
+					<Day isSelected={isSelected} date={dates.saturday} todos={todosByDay[dates.saturday] ?? []} addTodo={addTodo} weekdayName="Saturday" minBoxes={weekendBoxCount} />
+					<Day isSelected={isSelected} date={dates.sunday} todos={todosByDay[dates.sunday] ?? []} addTodo={addTodo} weekdayName="Sunday" minBoxes={weekendBoxCount} />
 				</group>
 			</group>
-			<Day isSelected={isSelected} date={dates.someday} todos={todosByDay[dates.someday] ?? []} addTodo={addTodo} weekdayName="Someday" />
+			<Day isSelected={isSelected} date={dates.someday} todos={todosByDay[dates.someday] ?? []} addTodo={addTodo} weekdayName="Someday" minBoxes={somedayBoxCount} />
 		</group>
 	)
 }
 
-function Day({ isSelected, date, todos, addTodo, weekdayName }: { isSelected: ({ date, row }: { date: string, row: number }) => boolean, date: string, todos: Todo[], addTodo: (todo: Todo) => void, weekdayName: string }) {
-	// Saturday and Sunday get 2 boxes, other days get full height (8 boxes)
-	const isWeekend = weekdayName === 'Saturday' || weekdayName === 'Sunday'
-	const minBoxes = isWeekend ? 2 : 8
-	const emptyBoxesNeeded = Math.max(0, minBoxes - todos.length)
+function Day({ isSelected, date, todos, addTodo, weekdayName, minBoxes }: { isSelected: ({ date, row }: { date: string, row: number }) => boolean, date: string, todos: Todo[], addTodo: (todo: Todo) => void, weekdayName: string, minBoxes?: number }) {
+	// Use passed minBoxes or fall back to weekend/weekday logic
+	const finalMinBoxes = minBoxes ?? (weekdayName === 'Saturday' || weekdayName === 'Sunday' ? 2 : 8)
+	const emptyBoxesNeeded = Math.max(0, finalMinBoxes - todos.length)
 	
 	return (
 		<group style={{ flexDirection: 'column' }}>
