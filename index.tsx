@@ -72,7 +72,7 @@ type Focus = {
 	lastWeekday?: number
 }
 
-type ACTIONS = 'MOVE_DOWN' | 'MOVE_UP' | 'MOVE_RIGHT' | 'MOVE_LEFT'
+type ACTIONS = 'MOVE_DOWN' | 'MOVE_UP' | 'MOVE_RIGHT' | 'MOVE_LEFT' | 'JUMP_TO_SOMEDAY' | 'JUMP_FROM_SOMEDAY'
 
 function reducer(state: Focus, action: { type: ACTIONS; todos?: TodosByDay }) {
 	const todosByDay: TodosByDay = action.todos || {
@@ -193,6 +193,19 @@ function reducer(state: Focus, action: { type: ACTIONS; todos?: TodosByDay }) {
 				}
 			}
 			return state // Mon, Someday can't go left
+		case 'JUMP_TO_SOMEDAY':
+			if (state.date === dateIndicies[dates.someday]) return state
+			return { ...state, date: dateIndicies[dates.someday], lastWeekday: state.date, }
+		case 'JUMP_FROM_SOMEDAY':
+			if (state.date !== dateIndicies[dates.someday]) return state
+			const targetWeekday = state.lastWeekday ?? 1 // default to Monday
+			const targetDateString = datesByIndex[targetWeekday as keyof typeof datesByIndex]
+			const targetTodos = todosByDay[targetDateString] || []
+			return { 
+				date: targetWeekday, 
+				row: Math.min(state.row, Math.max(targetTodos.length, 0)),
+				lastWeekday: targetWeekday
+			}
 		default:
 			return state
 	}
@@ -244,9 +257,17 @@ function App() {
 	useKeyboard((key) => {
 		if (['down', 'j'].includes(key.name)) {
 			if (key.name === 'j' && isInputFocused) return
+			if (key.shift) {
+				dispatch({ type: 'JUMP_TO_SOMEDAY', todos: todosByDay })
+				return
+			}
 			dispatch({ type: 'MOVE_DOWN', todos: todosByDay })
 		} else if (['up', 'k'].includes(key.name)) {
 			if (key.name === 'k' && isInputFocused) return
+			if (key.shift) {
+				dispatch({ type: 'JUMP_FROM_SOMEDAY', todos: todosByDay })
+				return
+			}
 			dispatch({ type: 'MOVE_UP', todos: todosByDay })
 		}
 
