@@ -162,6 +162,21 @@ function App() {
 				})
 			})
 		}
+
+		if (key.name === 'd') {
+			setTodos((prev) => {
+				return prev.filter((todo) => {
+					if (!todo.assignedDate) return true
+					const isFocusedDate = dateIndicies[todo.assignedDate] === focused.date
+					const row = (todosByDay[todo.assignedDate]?.findIndex((item) => item.text === todo.text) ?? 0) + 1
+					if (isFocusedDate && row === focused.row) {
+						return false
+					}
+					return true
+				})
+			})
+			dispatch({ type: 'MOVE_UP', todos: todosByDay })
+		}
 	})
 
 	const isSelected = ({ date, row }: { date: Weekday, row: number }) => {
