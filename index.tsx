@@ -12,13 +12,13 @@ type Todo = {
 const { currentWeekday, weekStart, weekEnd } = getCurrentWeek()
 
 const dates = {
-	sunday: weekStart.toISOString().substring(0, 10),
-	monday: addDays(weekStart, 1).toISOString().substring(0, 10),
-	tuesday: addDays(weekStart, 2).toISOString().substring(0, 10),
-	wednesday: addDays(weekStart, 3).toISOString().substring(0, 10),
-	thursday: addDays(weekStart, 4).toISOString().substring(0, 10),
-	friday: addDays(weekStart, 5).toISOString().substring(0, 10),
-	saturday: addDays(weekStart, 6).toISOString().substring(0, 10),
+	sunday: addDays(weekStart, 6).toISOString().substring(0, 10),
+	monday: weekStart.toISOString().substring(0, 10),
+	tuesday: addDays(weekStart, 1).toISOString().substring(0, 10),
+	wednesday: addDays(weekStart, 2).toISOString().substring(0, 10),
+	thursday: addDays(weekStart, 3).toISOString().substring(0, 10),
+	friday: addDays(weekStart, 4).toISOString().substring(0, 10),
+	saturday: addDays(weekStart, 5).toISOString().substring(0, 10),
 	someday: 'someday',
 }
 
@@ -314,10 +314,17 @@ function Day({ isSelected, date, todos, addTodo, weekdayName, minBoxes }: { isSe
 	const finalMinBoxes = minBoxes ?? (weekdayName === 'Saturday' || weekdayName === 'Sunday' ? 2 : 8)
 	const emptyBoxesNeeded = Math.max(0, finalMinBoxes - todos.length)
 	
+	// Get the correct date for this specific day
+	const getDateForDay = () => {
+		if (date === dates.someday) return ''
+		// Parse the ISO date string and add 'T00:00:00' to ensure it's treated as local time
+		return new Date(date + 'T00:00:00').toLocaleDateString()
+	}
+	
 	return (
 		<group style={{ flexDirection: 'column' }}>
 			<box border={['bottom']} borderColor="#FFFFFF">
-				<text fg="#FFFFFF">{weekdayName} {addDays(weekStart, 1).toLocaleDateString()}</text>
+				<text fg="#FFFFFF">{weekdayName} {getDateForDay()}</text>
 			</box>
 			<box backgroundColor={isSelected({ date, row: 0 }) ? "#FFFFFF" : "#424242"}>
 				<TodoInput addTodo={addTodo} focused={isSelected({ date, row: 0 })} date={date} />
@@ -359,7 +366,9 @@ function getCurrentWeek() {
 	const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 	const today = new Date()
 	const currentWeekday = days[today.getDay()]
-	const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay())
+	// Calculate Monday as week start: if today is Sunday (0), go back 6 days, otherwise go back (day - 1) days
+	const daysSinceMonday = today.getDay() === 0 ? 6 : today.getDay() - 1
+	const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - daysSinceMonday)
 	const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
 	return { currentWeekday, weekStart, weekEnd }
 }
