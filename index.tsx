@@ -19,6 +19,7 @@ const dates = {
 	thursday: addDays(weekStart, 4).toISOString().substring(0, 10),
 	friday: addDays(weekStart, 5).toISOString().substring(0, 10),
 	saturday: addDays(weekStart, 6).toISOString().substring(0, 10),
+	someday: 'someday',
 }
 
 type Weekday = (typeof dates)[keyof typeof dates]
@@ -31,6 +32,7 @@ const dateIndicies = {
 	[dates.thursday]: 4,
 	[dates.friday]: 5,
 	[dates.saturday]: 6,
+	[dates.someday]: 7,
 }
 
 const datesByIndex = {
@@ -41,6 +43,7 @@ const datesByIndex = {
 	4: dates.thursday,
 	5: dates.friday,
 	6: dates.saturday,
+	7: dates.someday,
 }
 
 type TodosByDay = {
@@ -51,11 +54,13 @@ type TodosByDay = {
 	[dates.friday]: Todo[]
 	[dates.saturday]: Todo[]
 	[dates.sunday]: Todo[]
+	[dates.someday]: Todo[]
 }
 
 type Focus = {
 	date: number
 	row: number
+	lastWeekday?: number
 }
 
 type ACTIONS = 'MOVE_DOWN' | 'MOVE_UP' | 'MOVE_RIGHT' | 'MOVE_LEFT'
@@ -69,36 +74,58 @@ function reducer(state: Focus, action: { type: ACTIONS; todos?: TodosByDay }) {
 		[dates.friday]: [],
 		[dates.saturday]: [],
 		[dates.sunday]: [],
+		[dates.someday]: [],
 	}
 	const currentDateString = datesByIndex[state.date as keyof typeof datesByIndex]
 	const currentTodos = todosByDay[currentDateString] || []
 	
 	switch (action.type) {
 		case 'MOVE_DOWN':
-			if (state.row >= currentTodos.length) return state
+			if (state.row >= currentTodos.length) {
+				// If at bottom of any weekday (0-6), move to someday
+				if (state.date >= 0 && state.date <= 6) {
+					return { date: 7, row: 0, lastWeekday: state.date } // someday index, input row
+				}
+				return state
+			}
 			return { ...state, row: state.row + 1 }
 		case 'MOVE_UP':
+			// If in someday (index 7) and at input row (0), go back to last weekday
+			if (state.date === 7 && state.row === 0) {
+				const lastWeekday = state.lastWeekday ?? 1 // default to Monday
+				const lastWeekdayString = datesByIndex[lastWeekday as keyof typeof datesByIndex]
+				const lastWeekdayTodos = todosByDay[lastWeekdayString] || []
+				return { 
+					date: lastWeekday, 
+					row: Math.max(lastWeekdayTodos.length, 0),
+					lastWeekday: lastWeekday
+				}
+			}
 			if (state.row === 0) return state
 			return { ...state, row: state.row - 1 }
 		case 'MOVE_RIGHT':
-			if (state.date === 6) return state // Saturday is index 6
+			if (state.date === 6) return state // Saturday is index 6, can't go right
+			if (state.date === 7) return state // In someday, can't go right
 			const nextDateString = datesByIndex[(state.date + 1) as keyof typeof datesByIndex]
 			const nextTodos = todosByDay[nextDateString] || []
 			const maxRow = Math.max(0, nextTodos.length)
 			return { 
 				...state, 
 				date: state.date + 1,
-				row: Math.min(state.row, maxRow)
+				row: Math.min(state.row, maxRow),
+				lastWeekday: state.date + 1
 			}
 		case 'MOVE_LEFT':
-			if (state.date === 0) return state // Sunday is index 0
+			if (state.date === 0) return state // Sunday is index 0, can't go left
+			if (state.date === 7) return state // In someday, can't go left
 			const prevDateString = datesByIndex[(state.date - 1) as keyof typeof datesByIndex]
 			const prevTodos = todosByDay[prevDateString] || []
 			const maxPrevRow = Math.max(0, prevTodos.length)
 			return { 
 				...state, 
 				date: state.date - 1,
-				row: Math.min(state.row, maxPrevRow)
+				row: Math.min(state.row, maxPrevRow),
+				lastWeekday: state.date - 1
 			}
 		default:
 			return state
@@ -122,6 +149,7 @@ function App() {
 		[dates.thursday]: todos.filter((todo) => todo.assignedDate === dates.thursday),
 		[dates.friday]: todos.filter((todo) => todo.assignedDate === dates.friday),
 		[dates.saturday]: todos.filter((todo) => todo.assignedDate === dates.saturday),
+		[dates.someday]: todos.filter((todo) => todo.assignedDate === dates.someday),
 	}
 
 	useKeyboard((key) => {
@@ -199,6 +227,7 @@ function App() {
 				<Day isSelected={isSelected} date={dates.friday} todos={todosByDay[dates.friday] ?? []} addTodo={addTodo} weekdayName="Friday" />
 				<Day isSelected={isSelected} date={dates.saturday} todos={todosByDay[dates.saturday] ?? []} addTodo={addTodo} weekdayName="Saturday" />
 			</group>
+			<Day isSelected={isSelected} date={dates.someday} todos={todosByDay[dates.someday] ?? []} addTodo={addTodo} weekdayName="Someday" />
 		</group>
 	)
 }
