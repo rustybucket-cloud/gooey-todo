@@ -1,13 +1,8 @@
-import { useState, useReducer } from 'react'
+import { useState, useReducer, useEffect } from 'react'
 import { render, useKeyboard, useRenderer, useTerminalDimensions } from '@opentui/react'
 import { strikethrough } from '@opentui/core'
-
-type Todo = {
-	text: string
-	completedAt: string | null
-	assignedDate: string | null
-	createdAt: string
-}
+import type { Todo } from './db'
+import { todoDb } from './db'
 
 const { currentWeekday, weekStart, weekEnd } = getCurrentWeek()
 
@@ -200,6 +195,12 @@ function App() {
 
 	const renderer = useRenderer()
 
+	// Load todos from database on component mount
+	useEffect(() => {
+		const loadedTodos = todoDb.getAllTodos()
+		setTodos(loadedTodos)
+	}, [])
+
 	const todosByDay: TodosByDay = {
 		[dates.sunday]: todos.filter((todo) => todo.assignedDate === dates.sunday),
 		[dates.monday]: todos.filter((todo) => todo.assignedDate === dates.monday),
@@ -252,31 +253,35 @@ function App() {
 		}
 
 		if (key.name === 'c') {
-			setTodos((prev) => {
-				return prev.map((todo) => {
-					if (!todo.assignedDate) return todo
-					const isFocusedDate = dateIndicies[todo.assignedDate] === focused.date
-					const row = (todosByDay[todo.assignedDate]?.findIndex((item) => item.text === todo.text) ?? 0) + 1
-					if (isFocusedDate && row === focused.row) {
-						return { ...todo, completedAt: todo.completedAt ? null : new Date().toISOString() }
+			const currentDateString = datesByIndex[focused.date as keyof typeof datesByIndex]
+			const currentTodos = todosByDay[currentDateString] || []
+			const todoIndex = focused.row - 1
+			
+			if (todoIndex >= 0 && todoIndex < currentTodos.length) {
+				const todoToToggle = currentTodos[todoIndex]
+				if (todoToToggle?.id) {
+					const updatedTodo = todoDb.toggleComplete(todoToToggle.id)
+					if (updatedTodo) {
+						setTodos(prev => prev.map(t => t.id === updatedTodo.id ? updatedTodo : t))
 					}
-					return todo
-				})
-			})
+				}
+			}
 		}
 
 		if (key.name === 'd') {
-			setTodos((prev) => {
-				return prev.filter((todo) => {
-					if (!todo.assignedDate) return true
-					const isFocusedDate = dateIndicies[todo.assignedDate] === focused.date
-					const row = (todosByDay[todo.assignedDate]?.findIndex((item) => item.text === todo.text) ?? 0) + 1
-					if (isFocusedDate && row === focused.row) {
-						return false
+			const currentDateString = datesByIndex[focused.date as keyof typeof datesByIndex]
+			const currentTodos = todosByDay[currentDateString] || []
+			const todoIndex = focused.row - 1
+			
+			if (todoIndex >= 0 && todoIndex < currentTodos.length) {
+				const todoToDelete = currentTodos[todoIndex]
+				if (todoToDelete?.id) {
+					const success = todoDb.deleteTodo(todoToDelete.id)
+					if (success) {
+						setTodos(prev => prev.filter(t => t.id !== todoToDelete.id))
 					}
-					return true
-				})
-			})
+				}
+			}
 			dispatch({ type: 'MOVE_UP', todos: todosByDay })
 		}
 	})
@@ -285,8 +290,9 @@ function App() {
 		return focused.date === dateIndicies[date] && focused.row === row
 	}
 
-	const addTodo = (todo: Todo) => {
-		setTodos((prev) => [...prev, todo])
+	const addTodo = (todo: Omit<Todo, 'id'>) => {
+		const newTodo = todoDb.addTodo(todo)
+		setTodos((prev) => [...prev, newTodo])
 	}
 
 	return (
@@ -309,7 +315,7 @@ function App() {
 	)
 }
 
-function Day({ isSelected, date, todos, addTodo, weekdayName, minBoxes }: { isSelected: ({ date, row }: { date: string, row: number }) => boolean, date: string, todos: Todo[], addTodo: (todo: Todo) => void, weekdayName: string, minBoxes?: number }) {
+function Day({ isSelected, date, todos, addTodo, weekdayName, minBoxes }: { isSelected: ({ date, row }: { date: string, row: number }) => boolean, date: string, todos: Todo[], addTodo: (todo: Omit<Todo, 'id'>) => void, weekdayName: string, minBoxes?: number }) {
 	// Use passed minBoxes or fall back to weekend/weekday logic
 	const finalMinBoxes = minBoxes ?? (weekdayName === 'Saturday' || weekdayName === 'Sunday' ? 2 : 8)
 	const emptyBoxesNeeded = Math.max(0, finalMinBoxes - todos.length)
@@ -348,7 +354,7 @@ function Day({ isSelected, date, todos, addTodo, weekdayName, minBoxes }: { isSe
 	)
 }
 
-function TodoInput({ addTodo, focused, date }: { addTodo: (todo: Todo) => void, focused: boolean, date: string }) {
+function TodoInput({ addTodo, focused, date }: { addTodo: (todo: Omit<Todo, 'id'>) => void, focused: boolean, date: string }) {
 	const [input, setInput] = useState('')
 
 	return (
