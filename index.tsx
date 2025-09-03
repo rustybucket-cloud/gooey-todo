@@ -44,14 +44,13 @@ const datesByIndex = {
 }
 
 type TodosByDay = {
-	monday: Todo[]
-	tuesday: Todo[]
-	wednesday: Todo[]
-	thursday: Todo[]
-	friday: Todo[]
-	saturday: Todo[]
-	sunday: Todo[]
-	[key: string]: Todo[]
+	[dates.monday]: Todo[]
+	[dates.tuesday]: Todo[]
+	[dates.wednesday]: Todo[]
+	[dates.thursday]: Todo[]
+	[dates.friday]: Todo[]
+	[dates.saturday]: Todo[]
+	[dates.sunday]: Todo[]
 }
 
 type Focus = {
@@ -63,13 +62,13 @@ type ACTIONS = 'MOVE_DOWN' | 'MOVE_UP' | 'MOVE_RIGHT' | 'MOVE_LEFT'
 
 function reducer(state: Focus, action: { type: ACTIONS; todos?: TodosByDay }) {
 	const todosByDay: TodosByDay = action.todos || {
-		monday: [],
-		tuesday: [],
-		wednesday: [],
-		thursday: [],
-		friday: [],
-		saturday: [],
-		sunday: [],
+		[dates.monday]: [],
+		[dates.tuesday]: [],
+		[dates.wednesday]: [],
+		[dates.thursday]: [],
+		[dates.friday]: [],
+		[dates.saturday]: [],
+		[dates.sunday]: [],
 	}
 	const currentDateString = datesByIndex[state.date as keyof typeof datesByIndex]
 	const currentTodos = todosByDay[currentDateString] || []
@@ -123,13 +122,6 @@ function App() {
 		[dates.thursday]: todos.filter((todo) => todo.assignedDate === dates.thursday),
 		[dates.friday]: todos.filter((todo) => todo.assignedDate === dates.friday),
 		[dates.saturday]: todos.filter((todo) => todo.assignedDate === dates.saturday),
-		monday: todos.filter((todo) => todo.assignedDate === dates.monday),
-		tuesday: todos.filter((todo) => todo.assignedDate === dates.tuesday),
-		wednesday: todos.filter((todo) => todo.assignedDate === dates.wednesday),
-		thursday: todos.filter((todo) => todo.assignedDate === dates.thursday),
-		friday: todos.filter((todo) => todo.assignedDate === dates.friday),
-		saturday: todos.filter((todo) => todo.assignedDate === dates.saturday),
-		sunday: todos.filter((todo) => todo.assignedDate === dates.sunday),
 	}
 
 	useKeyboard((key) => {
