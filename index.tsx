@@ -213,7 +213,8 @@ function App() {
 
 	// Calculate available height for day columns
 	const headerHeight = 3 // "Hello, Todos!" + spacing
-	const totalAvailableHeight = height - headerHeight
+	const bottomPadding = 2 // Match the top padding
+	const totalAvailableHeight = height - headerHeight - bottomPadding
 	
 	// Allocate height: weekdays get 2/3, someday gets 1/3
 	const weekdayRowHeight = Math.floor(totalAvailableHeight * (2/3))
@@ -288,8 +289,8 @@ function App() {
 	}
 
 	return (
-		<group padding={2}>
-			<text fg="#00FF00">Hello, Todos!</text>
+		<group padding={1}>
+			<text fg="#00FF00">Todoui!</text>
 			<group style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
 				<Day isSelected={isSelected} date={dates.monday} todos={todosByDay[dates.monday] ?? []} addTodo={addTodo} weekdayName="Monday" minBoxes={weekdayBoxCount} />
 				<Day isSelected={isSelected} date={dates.tuesday} todos={todosByDay[dates.tuesday] ?? []} addTodo={addTodo} weekdayName="Tuesday" minBoxes={weekdayBoxCount} />
