@@ -12,13 +12,13 @@ export function HelpDialog() {
         zIndex: 1000,
       }}
       border
-      borderColor="#00FF00"
+      borderColor="#4A90E2"
       borderStyle="rounded"
       backgroundColor="#000000"
       padding={2}
     >
       <group style={{ flexDirection: "column" }}>
-        <text fg="#00FF00">Help - Keyboard Shortcuts</text>
+        <text fg="#4A90E2">Help - Keyboard Shortcuts</text>
 
         <group style={{ flexDirection: "column" }}>
           <text fg="#FFFFFF">Navigation:</text>

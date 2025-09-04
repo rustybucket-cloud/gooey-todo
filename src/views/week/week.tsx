@@ -1,4 +1,4 @@
-import { useState, useReducer } from "react";
+import React, { useState, useReducer } from "react";
 import {
   useKeyboard,
   useRenderer,
@@ -231,13 +231,13 @@ function TodoDialog({
         zIndex: 1000,
       }}
       border
-      borderColor="#00FF00"
+      borderColor="#4A90E2"
       borderStyle="rounded"
       backgroundColor="#000000"
       padding={2}
     >
       <group style={{ flexDirection: "column" }}>
-        <text fg="#00FF00">Add Todo</text>
+        <text fg="#4A90E2">Add Todo</text>
         <input
           placeholder="Enter todo text..."
           value={input}
@@ -389,7 +389,7 @@ function WeekView() {
   return (
     <group padding={1}>
       <group style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <text fg="#00FF00">Todoui!</text>
+        <text fg="#4A90E2">Todoui!</text>
         <text fg="#FFFFFF">{formatWeekRange()}</text>
       </group>
       <group style={{ flexDirection: "row", justifyContent: "space-between" }}>
