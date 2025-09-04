@@ -1,4 +1,4 @@
-import React, { useState, useReducer } from "react";
+import { useState, useReducer } from "react";
 import {
   useKeyboard,
   useRenderer,
@@ -61,39 +61,39 @@ function reducer(
   switch (action.type) {
     case "MOVE_DOWN":
       if (state.row >= currentTodos.length) {
-        // If at bottom of Saturday, move to Sunday input row
+        // If at bottom of Saturday, move to Sunday first row
         if (state.date === 6) {
-          return { date: 0, row: 0, lastWeekday: state.date };
+          return { date: 0, row: Math.max(1, 1), lastWeekday: state.date };
         }
         // If at bottom of any other weekday (1-5, 0), move to someday
         if ((state.date >= 1 && state.date <= 5) || state.date === 0) {
-          return { date: 7, row: 0, lastWeekday: state.date };
+          return { date: 7, row: Math.max(1, 1), lastWeekday: state.date };
         }
         return state;
       }
       return { ...state, row: state.row + 1 };
     case "MOVE_UP":
-      // If in someday (index 7) and at input row (0), go back to last weekday
-      if (state.date === 7 && state.row === 0) {
+      // If in someday (index 7) and at first row (1), go back to last weekday
+      if (state.date === 7 && state.row === 1) {
         const lastWeekday = state.lastWeekday ?? 1; // default to Monday
         const lastWeekdayString = datesByIndex[lastWeekday] || "";
         const lastWeekdayTodos = todosByDay[lastWeekdayString] || [];
         return {
           date: lastWeekday,
-          row: Math.max(lastWeekdayTodos.length, 0),
+          row: Math.max(lastWeekdayTodos.length, 1),
           lastWeekday: lastWeekday,
         };
       }
-      // If in Sunday and at input row (0), move to Saturday bottom
-      if (state.date === 0 && state.row === 0) {
+      // If in Sunday and at first row (1), move to Saturday bottom
+      if (state.date === 0 && state.row === 1) {
         const saturdayTodos = todosByDay[datesByIndex[6] || ""] || [];
         return {
           date: 6, // Saturday
-          row: Math.max(saturdayTodos.length, 0),
+          row: Math.max(saturdayTodos.length, 1),
           lastWeekday: 6,
         };
       }
-      if (state.row === 0) return state;
+      if (state.row === 1) return state;
       return { ...state, row: state.row - 1 };
     case "MOVE_RIGHT":
       // Top row (Mon-Fri): 1->2->3->4->5, then 5->6 (Sat)
@@ -101,7 +101,7 @@ function reducer(
         // Mon-Thu
         const nextDateString = datesByIndex[state.date + 1] || "";
         const nextTodos = todosByDay[nextDateString] || [];
-        const maxRow = Math.max(0, nextTodos.length);
+        const maxRow = Math.max(1, nextTodos.length);
         return {
           ...state,
           date: state.date + 1,
@@ -112,7 +112,7 @@ function reducer(
       if (state.date === 5) {
         // Fri -> Sat
         const nextTodos = todosByDay[datesByIndex[6] || ""] || [];
-        const maxRow = Math.max(0, nextTodos.length);
+        const maxRow = Math.max(1, nextTodos.length);
         return {
           ...state,
           date: 6, // Saturday
@@ -123,7 +123,7 @@ function reducer(
       if (state.date === 6) {
         // Sat -> Sun
         const nextTodos = todosByDay[datesByIndex[0] || ""] || [];
-        const maxRow = Math.max(0, nextTodos.length);
+        const maxRow = Math.max(1, nextTodos.length);
         return {
           ...state,
           date: 0, // Sunday
@@ -138,7 +138,7 @@ function reducer(
         // Tue-Fri
         const prevDateString = datesByIndex[state.date - 1] || "";
         const prevTodos = todosByDay[prevDateString] || [];
-        const maxPrevRow = Math.max(0, prevTodos.length);
+        const maxPrevRow = Math.max(1, prevTodos.length);
         return {
           ...state,
           date: state.date - 1,
@@ -149,7 +149,7 @@ function reducer(
       if (state.date === 0) {
         // Sun -> Sat
         const prevTodos = todosByDay[datesByIndex[6] || ""] || [];
-        const maxPrevRow = Math.max(0, prevTodos.length);
+        const maxPrevRow = Math.max(1, prevTodos.length);
         return {
           ...state,
           date: 6, // Saturday
@@ -160,7 +160,7 @@ function reducer(
       if (state.date === 6) {
         // Sat -> Fri
         const prevTodos = todosByDay[datesByIndex[5] || ""] || [];
-        const maxPrevRow = Math.max(0, prevTodos.length);
+        const maxPrevRow = Math.max(1, prevTodos.length);
         return {
           ...state,
           date: 5, // Friday
@@ -171,7 +171,12 @@ function reducer(
       return state; // Mon, Someday can't go left
     case "JUMP_TO_SOMEDAY":
       if (state.date === 7) return state; // already in someday
-      return { ...state, date: 7, lastWeekday: state.date };
+      return {
+        ...state,
+        date: 7,
+        row: Math.max(1, 1),
+        lastWeekday: state.date,
+      };
     case "JUMP_FROM_SOMEDAY":
       if (state.date !== 7) return state; // not in someday
       const targetWeekday = state.lastWeekday ?? 1; // default to Monday
@@ -179,7 +184,7 @@ function reducer(
       const targetTodos = todosByDay[targetDateString] || [];
       return {
         date: targetWeekday,
-        row: Math.min(state.row, Math.max(targetTodos.length, 0)),
+        row: Math.min(state.row, Math.max(targetTodos.length, 1)),
         lastWeekday: targetWeekday,
       };
     default:
@@ -208,6 +213,48 @@ function WeekContent() {
   );
 }
 
+function TodoDialog({
+  onSubmit,
+}: {
+  onSubmit: (text: string) => void;
+  onClose: () => void;
+}) {
+  const [input, setInput] = useState("");
+
+  return (
+    <box
+      style={{
+        position: "absolute",
+        top: 5,
+        left: 10,
+        right: 10,
+        zIndex: 1000,
+      }}
+      border
+      borderColor="#00FF00"
+      borderStyle="rounded"
+      backgroundColor="#000000"
+      padding={2}
+    >
+      <group style={{ flexDirection: "column" }}>
+        <text fg="#00FF00">Add Todo</text>
+        <input
+          placeholder="Enter todo text..."
+          value={input}
+          onInput={setInput}
+          focused={true}
+          onSubmit={() => {
+            if (input.trim() === "") return;
+            onSubmit(input.trim());
+          }}
+        />
+        <text></text>
+        <text fg="#888888">Press Enter to add, Esc to cancel</text>
+      </group>
+    </box>
+  );
+}
+
 function WeekView() {
   const { dates, dateIndices, datesByIndex, goToNextWeek, goToPreviousWeek } =
     useCurrentWeek();
@@ -216,25 +263,30 @@ function WeekView() {
 
   const [focused, dispatch] = useReducer(reducer, {
     date: getCurrentDayIndex(dates, dateIndices),
-    row: 0,
+    row: 1,
   });
 
   const [showHelp, setShowHelp] = useState(false);
-
-  const isInputFocused = focused.row === 0;
+  const [showTodoDialog, setShowTodoDialog] = useState(false);
 
   const renderer = useRenderer();
 
   useKeyboard((key) => {
+    // Don't handle navigation when todo dialog is open
+    if (showTodoDialog) {
+      if (key.name === "escape") {
+        setShowTodoDialog(false);
+      }
+      return;
+    }
+
     if (["down", "j"].includes(key.name)) {
-      if (key.name === "j" && isInputFocused) return;
       if (key.shift) {
         dispatch({ type: "JUMP_TO_SOMEDAY", todos: todosByDay, datesByIndex });
         return;
       }
       dispatch({ type: "MOVE_DOWN", todos: todosByDay, datesByIndex });
     } else if (["up", "k"].includes(key.name)) {
-      if (key.name === "k" && isInputFocused) return;
       if (key.shift) {
         dispatch({
           type: "JUMP_FROM_SOMEDAY",
@@ -247,7 +299,6 @@ function WeekView() {
     }
 
     if (["right", "l"].includes(key.name)) {
-      if (key.name === "l" && isInputFocused) return;
       if (key.shift) {
         goToNextWeek();
         return;
@@ -256,7 +307,6 @@ function WeekView() {
     }
 
     if (["left", "h"].includes(key.name)) {
-      if (key.name === "h" && isInputFocused) return;
       if (key.shift) {
         goToPreviousWeek();
         return;
@@ -264,10 +314,15 @@ function WeekView() {
       dispatch({ type: "MOVE_LEFT", todos: todosByDay, datesByIndex });
     }
 
-    if (isInputFocused) return;
-
     if (key.name === "t") {
       renderer.toggleDebugOverlay();
+    }
+
+    if (key.name === "a") {
+      // Only open todo dialog if not in someday
+      if (focused.date !== 7) {
+        setShowTodoDialog(true);
+      }
     }
 
     if (key.name === "c") {
@@ -303,6 +358,7 @@ function WeekView() {
 
     if (key.name === "escape") {
       setShowHelp(false);
+      setShowTodoDialog(false);
     }
   });
 
@@ -310,10 +366,8 @@ function WeekView() {
     return focused.date === dateIndices[date] && focused.row === row;
   };
 
-  const addTodo = (todo: Omit<Todo, "id">) => {
-    if (todo.assignedDate) {
-      addTodoForDate(todo.assignedDate, todo.text);
-    }
+  const isDayFocused = (date: string) => {
+    return focused.date === dateIndices[date];
   };
 
   const formatWeekRange = () => {
@@ -343,51 +397,51 @@ function WeekView() {
           isSelected={isSelected}
           date={dates.monday}
           todos={todosByDay[dates.monday] ?? []}
-          addTodo={addTodo}
           weekdayName="Monday"
+          isFocused={isDayFocused(dates.monday)}
         />
         <Day
           isSelected={isSelected}
           date={dates.tuesday}
           todos={todosByDay[dates.tuesday] ?? []}
-          addTodo={addTodo}
           weekdayName="Tuesday"
+          isFocused={isDayFocused(dates.tuesday)}
         />
         <Day
           isSelected={isSelected}
           date={dates.wednesday}
           todos={todosByDay[dates.wednesday] ?? []}
-          addTodo={addTodo}
           weekdayName="Wednesday"
+          isFocused={isDayFocused(dates.wednesday)}
         />
         <Day
           isSelected={isSelected}
           date={dates.thursday}
           todos={todosByDay[dates.thursday] ?? []}
-          addTodo={addTodo}
           weekdayName="Thursday"
+          isFocused={isDayFocused(dates.thursday)}
         />
         <Day
           isSelected={isSelected}
           date={dates.friday}
           todos={todosByDay[dates.friday] ?? []}
-          addTodo={addTodo}
           weekdayName="Friday"
+          isFocused={isDayFocused(dates.friday)}
         />
         <group style={{ flexDirection: "column" }}>
           <Day
             isSelected={isSelected}
             date={dates.saturday}
             todos={todosByDay[dates.saturday] ?? []}
-            addTodo={addTodo}
             weekdayName="Saturday"
+            isFocused={isDayFocused(dates.saturday)}
           />
           <Day
             isSelected={isSelected}
             date={dates.sunday}
             todos={todosByDay[dates.sunday] ?? []}
-            addTodo={addTodo}
             weekdayName="Sunday"
+            isFocused={isDayFocused(dates.sunday)}
           />
         </group>
       </group>
@@ -395,14 +449,24 @@ function WeekView() {
         isSelected={isSelected}
         date={dates.someday}
         todos={todosByDay[dates.someday] ?? []}
-        addTodo={addTodo}
         weekdayName="Someday"
+        isFocused={isDayFocused(dates.someday)}
       />
       <text fg="#888888">
-        ←→hjkl: navigate | shift+↓: someday | shift+↑: from someday | c:
-        complete | d: delete | t: debug
+        ←→hjkl: navigate | shift+↓: someday | shift+↑: from someday | a: add
+        todo | c: complete | d: delete | ?: help
       </text>
       {showHelp && <HelpDialog />}
+      {showTodoDialog && (
+        <TodoDialog
+          onSubmit={(text: string) => {
+            const currentDateString = datesByIndex[focused.date] || "";
+            addTodoForDate(currentDateString, text);
+            setShowTodoDialog(false);
+          }}
+          onClose={() => setShowTodoDialog(false)}
+        />
+      )}
     </group>
   );
 }
@@ -411,14 +475,14 @@ function Day({
   isSelected,
   date,
   todos,
-  addTodo,
   weekdayName,
+  isFocused,
 }: {
   isSelected: ({ date, row }: { date: string; row: number }) => boolean;
   date: string;
   todos: Todo[];
-  addTodo: (todo: Omit<Todo, "id">) => void;
   weekdayName: string;
+  isFocused: boolean;
 }) {
   const { height, width } = useTerminalDimensions();
   const rootPadding = 2;
@@ -444,7 +508,7 @@ function Day({
     <box
       style={{ width: weekdayName !== "Someday" ? boxWidth : "100%" }}
       border
-      borderColor="#FFFFFF"
+      borderColor={isFocused ? "#4A90E2" : "#FFFFFF"}
       borderStyle="rounded"
     >
       <group style={{ flexDirection: "column", height: dayHeight }}>
@@ -462,20 +526,6 @@ function Day({
             </text>
           </group>
         </box>
-        <box
-          backgroundColor={isSelected({ date, row: 0 }) ? "#FFFFFF" : "#424242"}
-        >
-          <TodoInput
-            addTodo={addTodo}
-            focused={isSelected({ date, row: 0 })}
-            date={date}
-          />
-        </box>
-        {/* for some reason, the first box overlaps the input box */}
-        {/* so we add an empty box to push the other boxes down */}
-        <box>
-          <text />
-        </box>
         {todos.map((todo, index) => (
           <box
             key={index}
@@ -491,39 +541,6 @@ function Day({
           </box>
         ))}
       </group>
-    </box>
-  );
-}
-
-function TodoInput({
-  addTodo,
-  focused,
-  date,
-}: {
-  addTodo: (todo: Omit<Todo, "id">) => void;
-  focused: boolean;
-  date: string;
-}) {
-  const [input, setInput] = useState("");
-
-  return (
-    <box title="Add Todo">
-      <input
-        placeholder="Add Todo"
-        value={input}
-        onInput={setInput}
-        focused={focused}
-        onSubmit={() => {
-          if (input.trim() === "") return;
-          addTodo({
-            text: input,
-            completedAt: null,
-            assignedDate: date,
-            createdAt: new Date().toISOString(),
-          });
-          setInput("");
-        }}
-      />
     </box>
   );
 }

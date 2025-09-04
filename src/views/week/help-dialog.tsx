@@ -29,9 +29,9 @@ export function HelpDialog() {
           <text fg="#888888"> Shift+←→ Previous/Next week</text>
 
           <text fg="#FFFFFF">Actions:</text>
+          <text fg="#888888"> a Add new todo (when on a day)</text>
           <text fg="#888888"> c Complete/uncomplete todo</text>
           <text fg="#888888"> d Delete todo</text>
-          <text fg="#888888"> Enter Add new todo (when in input)</text>
 
           <text fg="#FFFFFF">Other:</text>
           <text fg="#888888"> t Toggle debug overlay</text>
