@@ -208,7 +208,7 @@ function WeekContent() {
 }
 
 function WeekView() {
-  const { dates, dateIndices, datesByIndex } = useCurrentWeek();
+  const { dates, dateIndices, datesByIndex, goToNextWeek, goToPreviousWeek } = useCurrentWeek();
   const { todosByDay, addTodoForDate, toggleTodoComplete, deleteTodoById } =
     useTodos();
 
@@ -244,11 +244,19 @@ function WeekView() {
 
     if (["right", "l"].includes(key.name)) {
       if (key.name === "l" && isInputFocused) return;
+      if (key.shift) {
+        goToNextWeek();
+        return;
+      }
       dispatch({ type: "MOVE_RIGHT", todos: todosByDay, datesByIndex });
     }
 
     if (["left", "h"].includes(key.name)) {
       if (key.name === "h" && isInputFocused) return;
+      if (key.shift) {
+        goToPreviousWeek();
+        return;
+      }
       dispatch({ type: "MOVE_LEFT", todos: todosByDay, datesByIndex });
     }
 
