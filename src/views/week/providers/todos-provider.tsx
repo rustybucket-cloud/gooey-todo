@@ -56,6 +56,7 @@ export default function TodosProvider({ children, weekStart, weekEnd }: TodosPro
 
 	const refreshTodosForWeek = useCallback((weekStart: Date, weekEnd: Date) => {
 		const days = getDaysInWeek(weekStart, weekEnd);
+		days.push("someday");
 		const newTodosByDay: TodosByDay = {};
 
 		days.forEach(date => {
