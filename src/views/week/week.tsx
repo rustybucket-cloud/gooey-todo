@@ -312,7 +312,9 @@ function WeekView() {
 
   const [showHelp, setShowHelp] = useState(false);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<number | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<number | null>(
+    null,
+  );
 
   const renderer = useRenderer();
 
@@ -435,7 +437,7 @@ function WeekView() {
   return (
     <group padding={1}>
       <group style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <text fg="#4A90E2">Todoui!</text>
+        <text fg="#4A90E2">Gooey Todo!</text>
         <text fg="#FFFFFF">{formatWeekRange()}</text>
       </group>
       <group style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -513,23 +515,24 @@ function WeekView() {
           onClose={() => setShowTodoDialog(false)}
         />
       )}
-      {deleteConfirmation && (() => {
-        const todoToDelete = Object.values(todosByDay)
-          .flat()
-          .find(todo => todo.id === deleteConfirmation);
-        
-        return todoToDelete ? (
-          <ConfirmDeleteDialog
-            todoText={todoToDelete.text}
-            onConfirm={() => {
-              deleteTodoById(deleteConfirmation);
-              setDeleteConfirmation(null);
-              dispatch({ type: "MOVE_UP", todos: todosByDay, datesByIndex });
-            }}
-            onCancel={() => setDeleteConfirmation(null)}
-          />
-        ) : null;
-      })()}
+      {deleteConfirmation &&
+        (() => {
+          const todoToDelete = Object.values(todosByDay)
+            .flat()
+            .find((todo) => todo.id === deleteConfirmation);
+
+          return todoToDelete ? (
+            <ConfirmDeleteDialog
+              todoText={todoToDelete.text}
+              onConfirm={() => {
+                deleteTodoById(deleteConfirmation);
+                setDeleteConfirmation(null);
+                dispatch({ type: "MOVE_UP", todos: todosByDay, datesByIndex });
+              }}
+              onCancel={() => setDeleteConfirmation(null)}
+            />
+          ) : null;
+        })()}
     </group>
   );
 }

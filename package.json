@@ -1,11 +1,12 @@
 {
-  "name": "todoui",
+  "name": "gooey-todo",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "scripts": {
     "start": "bun run src/main.tsx",
-    "lint": "bunx eslint"
+    "lint": "bunx eslint",
+    "build:local": "bun build ./src/main.tsx --compile --outfile ~/Applications/gooey-todo"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
