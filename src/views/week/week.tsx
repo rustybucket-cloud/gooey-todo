@@ -10,6 +10,7 @@ import CurrentWeekProvider, {
   useCurrentWeek,
 } from "./providers/current-week-provider";
 import TodosProvider, { useTodos } from "./providers/todos-provider";
+import { HelpDialog } from "./help-dialog";
 
 function getCurrentDayIndex(
   dates: Record<string, string>,
@@ -208,7 +209,8 @@ function WeekContent() {
 }
 
 function WeekView() {
-  const { dates, dateIndices, datesByIndex, goToNextWeek, goToPreviousWeek } = useCurrentWeek();
+  const { dates, dateIndices, datesByIndex, goToNextWeek, goToPreviousWeek } =
+    useCurrentWeek();
   const { todosByDay, addTodoForDate, toggleTodoComplete, deleteTodoById } =
     useTodos();
 
@@ -216,6 +218,8 @@ function WeekView() {
     date: getCurrentDayIndex(dates, dateIndices),
     row: 0,
   });
+
+  const [showHelp, setShowHelp] = useState(false);
 
   const isInputFocused = focused.row === 0;
 
@@ -292,6 +296,14 @@ function WeekView() {
       }
       dispatch({ type: "MOVE_UP", todos: todosByDay, datesByIndex });
     }
+
+    if (key.name === "?") {
+      setShowHelp((prev) => !prev);
+    }
+
+    if (key.name === "escape") {
+      setShowHelp(false);
+    }
   });
 
   const isSelected = ({ date, row }: { date: Weekday; row: number }) => {
@@ -307,12 +319,12 @@ function WeekView() {
   const formatWeekRange = () => {
     const start = new Date(dates.monday + "T00:00:00");
     const end = new Date(dates.sunday + "T00:00:00");
-    
+
     const startMonth = start.toLocaleDateString("en-US", { month: "short" });
     const startDay = start.getDate();
     const endMonth = end.toLocaleDateString("en-US", { month: "short" });
     const endDay = end.getDate();
-    
+
     if (startMonth === endMonth) {
       return `${startMonth} ${startDay}-${endDay}`;
     } else {
@@ -390,6 +402,7 @@ function WeekView() {
         ←→hjkl: navigate | shift+↓: someday | shift+↑: from someday | c:
         complete | d: delete | t: debug
       </text>
+      {showHelp && <HelpDialog />}
     </group>
   );
 }
