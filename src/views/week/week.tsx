@@ -296,9 +296,28 @@ function WeekView() {
     }
   };
 
+  const formatWeekRange = () => {
+    const start = new Date(dates.monday + "T00:00:00");
+    const end = new Date(dates.sunday + "T00:00:00");
+    
+    const startMonth = start.toLocaleDateString("en-US", { month: "short" });
+    const startDay = start.getDate();
+    const endMonth = end.toLocaleDateString("en-US", { month: "short" });
+    const endDay = end.getDate();
+    
+    if (startMonth === endMonth) {
+      return `${startMonth} ${startDay}-${endDay}`;
+    } else {
+      return `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+    }
+  };
+
   return (
     <group padding={1}>
-      <text fg="#00FF00">Todoui!</text>
+      <group style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <text fg="#00FF00">Todoui!</text>
+        <text fg="#FFFFFF">{formatWeekRange()}</text>
+      </group>
       <group style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Day
           isSelected={isSelected}
