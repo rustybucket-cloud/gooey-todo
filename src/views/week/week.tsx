@@ -1,4 +1,4 @@
-import { useState, useReducer } from "react";
+import React, { useState, useReducer } from "react";
 import {
   useKeyboard,
   useRenderer,
@@ -11,7 +11,10 @@ import CurrentWeekProvider, {
 } from "./providers/current-week-provider";
 import TodosProvider, { useTodos } from "./providers/todos-provider";
 
-function getCurrentDayIndex(dates: Record<string, string>, dateIndices: Record<string, number>): number {
+function getCurrentDayIndex(
+  dates: Record<string, string>,
+  dateIndices: Record<string, number>,
+): number {
   const today = new Date().toISOString().substring(0, 10);
 
   // Check if today matches any of the week dates
@@ -377,7 +380,7 @@ function Day({
   addTodo: (todo: Omit<Todo, "id">) => void;
   weekdayName: string;
 }) {
-  const { height } = useTerminalDimensions();
+  const { height, width } = useTerminalDimensions();
   const rootPadding = 2;
   const headingHeight = 1;
   const dayHeadingHeight = 6;
@@ -385,25 +388,39 @@ function Day({
   const dayHeight =
     height / 2 - rootPadding - dayHeadingHeight - headingHeight - verticalGap;
 
+  const boxWidth = width / 6 - rootPadding;
+
   // Get the correct date for this specific day
   const getDateForDay = () => {
     if (date === "someday") return "";
     // Parse the ISO date string and add 'T00:00:00' to ensure it's treated as local time
-    return new Date(date + "T00:00:00").toLocaleDateString();
+    return new Intl.DateTimeFormat("en-us", {
+      month: "short",
+      day: "numeric",
+    }).format(new Date(date + "T00:00:00"));
   };
 
   return (
     <box
-      style={{ width: "100%" }}
+      style={{ width: weekdayName !== "Someday" ? boxWidth : "100%" }}
       border
       borderColor="#FFFFFF"
       borderStyle="rounded"
     >
       <group style={{ flexDirection: "column", height: dayHeight }}>
         <box border={["bottom"]} borderColor="#FFFFFF">
-          <text fg="#FFFFFF">
-            {weekdayName} {getDateForDay()}
-          </text>
+          <group
+            style={{ justifyContent: "space-between", flexDirection: "row" }}
+          >
+            {weekdayName !== "Someday" ? (
+              <text fg="#FFFFFF">{getDateForDay()}</text>
+            ) : null}
+            <text>
+              {weekdayName === "Someday"
+                ? weekdayName
+                : weekdayName.slice(0, 3)}
+            </text>
+          </group>
         </box>
         <box
           backgroundColor={isSelected({ date, row: 0 }) ? "#FFFFFF" : "#424242"}
