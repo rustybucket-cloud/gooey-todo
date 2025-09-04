@@ -1,4 +1,4 @@
-import React, { useState, useReducer } from "react";
+import { useState, useReducer } from "react";
 import {
   useKeyboard,
   useRenderer,
@@ -255,6 +255,50 @@ function TodoDialog({
   );
 }
 
+function ConfirmDeleteDialog({
+  todoText,
+  onConfirm,
+  onCancel,
+}: {
+  todoText: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useKeyboard((key) => {
+    if (key.name === "enter" || key.name === "return") {
+      onConfirm();
+    } else if (key.name === "escape") {
+      onCancel();
+    }
+  });
+
+  return (
+    <box
+      style={{
+        position: "absolute",
+        top: 5,
+        left: 10,
+        right: 10,
+        zIndex: 1000,
+      }}
+      border
+      borderColor="#FF6B6B"
+      borderStyle="rounded"
+      backgroundColor="#000000"
+      padding={2}
+    >
+      <group style={{ flexDirection: "column" }}>
+        <text fg="#FF6B6B">Delete Todo</text>
+        <text></text>
+        <text fg="#FFFFFF">Are you sure you want to delete:</text>
+        <text fg="#FFEB3B">"{todoText}"</text>
+        <text></text>
+        <text fg="#888888">Press Enter to confirm, Esc to cancel</text>
+      </group>
+    </box>
+  );
+}
+
 function WeekView() {
   const { dates, dateIndices, datesByIndex, goToNextWeek, goToPreviousWeek } =
     useCurrentWeek();
@@ -268,14 +312,16 @@ function WeekView() {
 
   const [showHelp, setShowHelp] = useState(false);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<number | null>(null);
 
   const renderer = useRenderer();
 
   useKeyboard((key) => {
-    // Don't handle navigation when todo dialog is open
-    if (showTodoDialog) {
+    // Don't handle navigation when todo dialog or delete confirmation is open
+    if (showTodoDialog || deleteConfirmation) {
       if (key.name === "escape") {
         setShowTodoDialog(false);
+        setDeleteConfirmation(null);
       }
       return;
     }
@@ -346,10 +392,9 @@ function WeekView() {
       if (todoIndex >= 0 && todoIndex < currentTodos.length) {
         const todoToDelete = currentTodos[todoIndex];
         if (todoToDelete?.id) {
-          deleteTodoById(todoToDelete.id);
+          setDeleteConfirmation(todoToDelete.id);
         }
       }
-      dispatch({ type: "MOVE_UP", todos: todosByDay, datesByIndex });
     }
 
     if (key.name === "?") {
@@ -359,6 +404,7 @@ function WeekView() {
     if (key.name === "escape") {
       setShowHelp(false);
       setShowTodoDialog(false);
+      setDeleteConfirmation(null);
     }
   });
 
@@ -467,6 +513,23 @@ function WeekView() {
           onClose={() => setShowTodoDialog(false)}
         />
       )}
+      {deleteConfirmation && (() => {
+        const todoToDelete = Object.values(todosByDay)
+          .flat()
+          .find(todo => todo.id === deleteConfirmation);
+        
+        return todoToDelete ? (
+          <ConfirmDeleteDialog
+            todoText={todoToDelete.text}
+            onConfirm={() => {
+              deleteTodoById(deleteConfirmation);
+              setDeleteConfirmation(null);
+              dispatch({ type: "MOVE_UP", todos: todosByDay, datesByIndex });
+            }}
+            onCancel={() => setDeleteConfirmation(null)}
+          />
+        ) : null;
+      })()}
     </group>
   );
 }
