@@ -211,12 +211,10 @@ function reducer(state: Focus, action: { type: ACTIONS; todos?: TodosByDay }) {
 	}
 }
 
-function App() {
+export default function App() {
 	const [todos, setTodos] = useState<Todo[]>([])
 
 	const [focused, dispatch] = useReducer(reducer, { date: getCurrentDayIndex(), row: 0 })
-
-	const { width, height } = useTerminalDimensions()
 
 	const isInputFocused = focused.row === 0
 
@@ -404,5 +402,3 @@ function addDays(date: Date, days: number) {
 	result.setDate(result.getDate() + days)
 	return result
 }
-
-render(<App />)
