@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from "react";
+import { addDays } from "../../../utils"
 
 interface CurrentWeekContextType {
 	currentWeek: { currentWeekday: string; weekStart: Date; weekEnd: Date };
@@ -46,8 +47,3 @@ function getCurrentWeek(weekOffset = 0) {
 	return { currentWeekday, weekStart, weekEnd }
 }
 
-function addDays(date: Date, days: number) {
-	const result = new Date(date)
-	result.setDate(result.getDate() + days)
-	return result
-}
