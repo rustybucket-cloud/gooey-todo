@@ -3,6 +3,18 @@ import { addDays } from "../../../utils"
 
 interface CurrentWeekContextType {
 	currentWeek: { currentWeekday: string; weekStart: Date; weekEnd: Date };
+	dates: {
+		sunday: string;
+		monday: string;
+		tuesday: string;
+		wednesday: string;
+		thursday: string;
+		friday: string;
+		saturday: string;
+		someday: string;
+	};
+	dateIndices: Record<string, number>;
+	datesByIndex: Record<number, string>;
 	goToNextWeek: () => void;
 	goToPreviousWeek: () => void;
 }
@@ -22,6 +34,42 @@ export default function CurrentWeekProvider({ children }: { children: ReactNode 
 
 	const currentWeek = useMemo(() => getCurrentWeek(weekOffset), [weekOffset])
 
+	const dates = useMemo(() => {
+		const { weekStart } = currentWeek;
+		return {
+			sunday: addDays(weekStart, 6).toISOString().substring(0, 10),
+			monday: weekStart.toISOString().substring(0, 10),
+			tuesday: addDays(weekStart, 1).toISOString().substring(0, 10),
+			wednesday: addDays(weekStart, 2).toISOString().substring(0, 10),
+			thursday: addDays(weekStart, 3).toISOString().substring(0, 10),
+			friday: addDays(weekStart, 4).toISOString().substring(0, 10),
+			saturday: addDays(weekStart, 5).toISOString().substring(0, 10),
+			someday: "someday",
+		};
+	}, [currentWeek]);
+
+	const dateIndices = useMemo(() => ({
+		[dates.sunday]: 0,
+		[dates.monday]: 1,
+		[dates.tuesday]: 2,
+		[dates.wednesday]: 3,
+		[dates.thursday]: 4,
+		[dates.friday]: 5,
+		[dates.saturday]: 6,
+		[dates.someday]: 7,
+	}), [dates]);
+
+	const datesByIndex = useMemo(() => ({
+		0: dates.sunday,
+		1: dates.monday,
+		2: dates.tuesday,
+		3: dates.wednesday,
+		4: dates.thursday,
+		5: dates.friday,
+		6: dates.saturday,
+		7: dates.someday,
+	}), [dates]);
+
 	const goToNextWeek = useCallback(() => {
 		setWeekOffset((prev) => prev + 1)
 	}, [])
@@ -30,7 +78,7 @@ export default function CurrentWeekProvider({ children }: { children: ReactNode 
 		setWeekOffset((prev) => prev - 1)
 	}, [])
 
-	return <CurrentWeekContent.Provider value={{ currentWeek, goToNextWeek, goToPreviousWeek }}>{children}</CurrentWeekContent.Provider>
+	return <CurrentWeekContent.Provider value={{ currentWeek, dates, dateIndices, datesByIndex, goToNextWeek, goToPreviousWeek }}>{children}</CurrentWeekContent.Provider>
 }
 
 function getCurrentWeek(weekOffset = 0) {

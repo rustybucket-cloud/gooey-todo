@@ -10,42 +10,19 @@ import CurrentWeekProvider, {
   useCurrentWeek,
 } from "./providers/current-week-provider";
 import TodosProvider, { useTodos } from "./providers/todos-provider";
-import { addDays } from "../../utils";
 
-function getCurrentDayIndex(weekStart: Date): number {
+function getCurrentDayIndex(dates: Record<string, string>, dateIndices: Record<string, number>): number {
   const today = new Date().toISOString().substring(0, 10);
-
-  const dates = {
-    sunday: addDays(weekStart, 6).toISOString().substring(0, 10),
-    monday: weekStart.toISOString().substring(0, 10),
-    tuesday: addDays(weekStart, 1).toISOString().substring(0, 10),
-    wednesday: addDays(weekStart, 2).toISOString().substring(0, 10),
-    thursday: addDays(weekStart, 3).toISOString().substring(0, 10),
-    friday: addDays(weekStart, 4).toISOString().substring(0, 10),
-    saturday: addDays(weekStart, 5).toISOString().substring(0, 10),
-    someday: "someday",
-  };
-
-  const dateIndicies = {
-    [dates.sunday]: 0,
-    [dates.monday]: 1,
-    [dates.tuesday]: 2,
-    [dates.wednesday]: 3,
-    [dates.thursday]: 4,
-    [dates.friday]: 5,
-    [dates.saturday]: 6,
-    [dates.someday]: 7,
-  };
 
   // Check if today matches any of the week dates
   for (const [, dateValue] of Object.entries(dates)) {
     if (dateValue === today) {
-      return dateIndicies[dateValue as keyof typeof dateIndicies] || 1;
+      return dateIndices[dateValue] || 1;
     }
   }
 
   // Default to Monday if today is not in the current week
-  return dateIndicies[dates.monday] || 1;
+  return dateIndices[dates.monday!] || 1;
 }
 
 type Weekday = string;
@@ -228,47 +205,12 @@ function WeekContent() {
 }
 
 function WeekView() {
-  const { currentWeek } = useCurrentWeek();
+  const { dates, dateIndices, datesByIndex } = useCurrentWeek();
   const { todosByDay, addTodoForDate, toggleTodoComplete, deleteTodoById } =
     useTodos();
 
-  const { weekStart } = currentWeek;
-
-  const dates = {
-    sunday: addDays(weekStart, 6).toISOString().substring(0, 10),
-    monday: weekStart.toISOString().substring(0, 10),
-    tuesday: addDays(weekStart, 1).toISOString().substring(0, 10),
-    wednesday: addDays(weekStart, 2).toISOString().substring(0, 10),
-    thursday: addDays(weekStart, 3).toISOString().substring(0, 10),
-    friday: addDays(weekStart, 4).toISOString().substring(0, 10),
-    saturday: addDays(weekStart, 5).toISOString().substring(0, 10),
-    someday: "someday",
-  };
-
-  const dateIndicies = {
-    [dates.sunday]: 0,
-    [dates.monday]: 1,
-    [dates.tuesday]: 2,
-    [dates.wednesday]: 3,
-    [dates.thursday]: 4,
-    [dates.friday]: 5,
-    [dates.saturday]: 6,
-    [dates.someday]: 7,
-  };
-
-  const datesByIndex: Record<number, string> = {
-    0: dates.sunday,
-    1: dates.monday,
-    2: dates.tuesday,
-    3: dates.wednesday,
-    4: dates.thursday,
-    5: dates.friday,
-    6: dates.saturday,
-    7: dates.someday,
-  };
-
   const [focused, dispatch] = useReducer(reducer, {
-    date: getCurrentDayIndex(weekStart),
+    date: getCurrentDayIndex(dates, dateIndices),
     row: 0,
   });
 
@@ -342,7 +284,7 @@ function WeekView() {
   });
 
   const isSelected = ({ date, row }: { date: Weekday; row: number }) => {
-    return focused.date === dateIndicies[date] && focused.row === row;
+    return focused.date === dateIndices[date] && focused.row === row;
   };
 
   const addTodo = (todo: Omit<Todo, "id">) => {
