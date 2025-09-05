@@ -11,6 +11,7 @@ import CurrentWeekProvider, {
 } from "./providers/current-week-provider";
 import TodosProvider, { useTodos } from "./providers/todos-provider";
 import { HelpDialog } from "./help-dialog";
+import { useRouter } from "../../contexts/router-context";
 
 function getCurrentDayIndex(
   dates: Record<string, string>,
@@ -304,6 +305,7 @@ function WeekView() {
     useCurrentWeek();
   const { todosByDay, addTodoForDate, toggleTodoComplete, deleteTodoById } =
     useTodos();
+  const { goToDayView } = useRouter();
 
   const [focused, dispatch] = useReducer(reducer, {
     date: getCurrentDayIndex(dates, dateIndices),
@@ -367,10 +369,7 @@ function WeekView() {
     }
 
     if (key.name === "a") {
-      // Only open todo dialog if not in someday
-      if (focused.date !== 7) {
-        setShowTodoDialog(true);
-      }
+      setShowTodoDialog(true);
     }
 
     if (key.name === "c") {
@@ -407,6 +406,14 @@ function WeekView() {
       setShowHelp(false);
       setShowTodoDialog(false);
       setDeleteConfirmation(null);
+    }
+
+    // Key to go to day view for focused day
+    if (key.name === "enter" || key.name === "return") {
+      const currentDateString = datesByIndex[focused.date] || "";
+      if (currentDateString && currentDateString !== "someday") {
+        goToDayView(currentDateString);
+      }
     }
   });
 
@@ -502,7 +509,7 @@ function WeekView() {
       />
       <text fg="#888888">
         ←→hjkl: navigate | shift+↓: someday | shift+↑: from someday | a: add
-        todo | c: complete | d: delete | ?: help
+        todo | c: complete | d: delete | enter: day view | ?: help
       </text>
       {showHelp && <HelpDialog />}
       {showTodoDialog && (
