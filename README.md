@@ -26,3 +26,18 @@ Install the dependencies:
 bun install
 ```
 
+Run the application:
+
+```bash
+bun start
+```
+
+#### Add to PATH (Optional)
+
+To run `gooey-todo` from anywhere, you can add it to your PATH.
+
+In your shell configuration file (e.g., `~/.bashrc`, `~/.zshrc`), add the following line:
+
+```bash
+export PATH="$PATH:/path/to/gooey-todo/gooey-todo"
+```
